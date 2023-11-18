@@ -12,6 +12,7 @@ TODO
 
 - Expérimentations avec différents types de matrices... faire varier k, M, n, delta... essayer de voir quand SC_GED marche ou quand au contraire il sert à rien vs les baselines
 - LATEX
+- Max: check le "variant SC_GED" dans [A SUPPRIMER]SC_GE.ipynb, je sais pas trop ce que c'est... éventuellement à mettre dans utils/Algorithms et supprimer le notebook
 
 
 
