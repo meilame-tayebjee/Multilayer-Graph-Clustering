@@ -4,6 +4,8 @@ from scipy.optimize import minimize
 import warnings
 warnings.filterwarnings("ignore")
 from utils.utils import *
+from mvlearn.cluster import MultiviewCoRegSpectralClustering
+
 
 
 #------------ALGORITHMS OF THE PAPER: SC_GED and SC_SR------------------#
@@ -198,3 +200,17 @@ def SC_AL(adj_matrix, k):
     kmeans = KMeans(n_clusters=k).fit(U)
 
     return kmeans.labels_
+
+
+def CoR(adj_matrix,k):
+
+    data = []
+    for i in range(len(adj_matrix)):
+        data.append(adj_matrix[:,:,0])
+    data = np.array(data)
+    mv_spectral = MultiviewCoRegSpectralClustering(n_clusters=k)
+
+    labels = mv_spectral.fit_predict(data)
+
+    return labels
+
