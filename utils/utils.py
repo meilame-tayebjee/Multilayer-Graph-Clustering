@@ -19,6 +19,22 @@ def computeDegreeMatrix(M):
     
     return np.diag(res)
 
+
+def k_means_cluster(U,k):
+    """
+    Computes the k-means clustering of a given matrix.
+
+    Parameters:
+    U (array shape (n,k)): The matrix to cluster.
+    k (int): The number of clusters to compute.
+
+    Returns:
+    numpy.ndarray shape(n,): The k-means cluster assignment of the matrix.
+    """
+    
+    kmeans = KMeans(n_clusters=k, random_state=0).fit(U)
+    return kmeans.labels_
+
 def spectralClustering(W, k, normalized=False):
     """
     Computes the normalized spectral clustering of a given adjacency matrix.
@@ -44,5 +60,4 @@ def spectralClustering(W, k, normalized=False):
     eigvecs = np.real(eigvecs)
     U = eigvecs[:,np.argsort(eigvals)[:k]] # eigenvectors corrresponding to the k smallest eigenvalues; shape (n,k)
 
-    kmeans = KMeans(n_clusters=k).fit(U)
-    return kmeans.labels_
+    return k_means_cluster(U,k)
