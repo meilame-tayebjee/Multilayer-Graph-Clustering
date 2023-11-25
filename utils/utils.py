@@ -1,5 +1,7 @@
 import numpy as np
 from sklearn.cluster import KMeans
+from utils.Metrics import *
+
 
 def computeDegreeMatrix(M):
     """
@@ -61,3 +63,33 @@ def spectralClustering(W, k, normalized=False):
     U = eigvecs[:,np.argsort(eigvals)[:k]] # eigenvectors corrresponding to the k smallest eigenvalues; shape (n,k)
 
     return k_means_cluster(U,k)
+
+def rankingInformativeLayers(W, k, true_clusters):
+    """
+    This function ranks the layers of a multilayer network according to their informativeness.
+
+    Parameters
+    ----------
+    W : numpy array shape (n,n,M)
+        The adjacency mayrix of the multilayer network.
+    
+    k : int
+        The target number of clusters.
+
+    true_clusters : numpy array shape (n,)
+        The true cluster assignment of the nodes.
+
+    Returns
+    -------
+    numpy array shape (M,)
+        The ranking of the layers.
+    """
+
+    n,_,M = W.shape
+    NMIs = np.zeros(M)
+    for i in range(M):
+        W_i = W[:,:,i]
+        clustering = spectralClustering(W_i, k)
+        NMIs[i] = NMI(clustering, true_clusters)
+    
+    return np.argsort(NMIs)[::-1][:n], NMIs

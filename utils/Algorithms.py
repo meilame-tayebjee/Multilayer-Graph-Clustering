@@ -1,4 +1,5 @@
 import numpy as np
+import time
 from sklearn.cluster import KMeans
 from scipy.optimize import minimize
 import warnings
@@ -30,7 +31,7 @@ def SC_GED(W,k, verbose = False):
     numpy.ndarray shape(n,1): The SC-GED cluster assignement for each node.
 
     """
-
+    startTime = time.time()
 
     alpha = 10
     beta = 100
@@ -118,12 +119,76 @@ def SC_GED(W,k, verbose = False):
 
     U = P
     U = U[:,:k]
-    return k_means_cluster(U,k) 
 
-def SC_SR(W,k):
-    "TO DO"
+    runTime = time.time() - startTime
+    return k_means_cluster(U,k), runTime
 
-    return 0
+def twoLayerStepSCSR(f,W, mu):
+  """
+  Perform one step of the SC-SR algorithm
+
+  Parameters
+  ----------
+  f : array shape ((n,k))
+      The vectors f
+  W : array shape (n,n)
+      The adjacency matrix of the layer we want to integrate
+
+  Returns
+  -------
+
+  newf : array shape ((k,n))
+       Updated vectors f
+
+  """
+  n, k = f.shape
+  newf = np.zeros((n,k))
+  D_2 = computeDegreeMatrix(W)
+  L_sym2 = np.linalg.inv(np.sqrt(D_2))@(D_2-W)@np.linalg.inv(np.sqrt(D_2)) #L_sym of the layer we want to integrate
+  for i in range(k):
+    newf[:, i] = mu*np.linalg.inv((L_sym2 + mu*np.identity(n)))@f[:,i]
+
+  return newf
+
+
+def SC_SR(W, k, true_clusters, mu = 1):
+    """
+    This function performs the multilayer spectral clustering with spectral regularization.
+    It generalizes the Algorithm 3 of the paper.
+
+    Parameters
+    ----------
+    W : numpy array shape (n,n,M)
+        The adjacency mayrix of the multilayer network.
+    
+    k : int
+        The target number of clusters.
+
+    Returns
+    -------
+    numpy array shape (n,)
+        The clustering of the multilayer network.
+    """
+    startTime = time.time()
+    n,_,M = W.shape
+    ranking, _ = rankingInformativeLayers(W, k, true_clusters)
+    
+    #Initialization: we take the best layer and compute the k first eigenvectors of its Laplacian
+    #---------------------#
+    bestLayerMatrix = W[:, :, ranking[0]] #shape (n,n,1) containing the adjacency matrices of the best layer
+    D = computeDegreeMatrix(bestLayerMatrix)
+    L = np.linalg.inv(D)@(D-bestLayerMatrix)
+    eigvals,U = np.linalg.eig(L) #U.shape = (n,n), contains the eigenvectors of the best layer
+    f = U[:,np.argsort(eigvals)[:k]] #f.shape = (n,k), contains the k first eigenvectors of the best layer
+    #---------------------#
+
+    #Integration of the other layers by updating the fs
+    for i in range(1, M):
+        nextLayerMatrix = W[:, :, ranking[i]]
+        f = twoLayerStepSCSR(f,nextLayerMatrix, mu)
+    
+    runTime = time.time() - startTime
+    return k_means_cluster(f,k), runTime
 
 
 #-----------------------BASELINE ALGORITHMS----------------------#
@@ -145,6 +210,8 @@ def SC_SUM(adj_matrix, k, normalized = False):
     -------
     numpy array of shape (n,k) : cluster assignment matrix
     """
+    startTime = time.time()
+
     n,_,M = adj_matrix.shape # M is the number of clusters, n is the number of nodes
     
     if normalized:
@@ -154,12 +221,14 @@ def SC_SUM(adj_matrix, k, normalized = False):
             D_i = computeDegreeMatrix(W_i)
             W += (np.sqrt(np.linalg.inv(D_i))) @ W_i @ (np.sqrt(np.linalg.inv(D_i)))
 
-        return spectralClustering(W, k)
+        runTime = time.time() - startTime
+        return spectralClustering(W, k), runTime
 
 
     else:
         W = np.sum(adj_matrix, axis=-1) #summation of the M adjacency matrices
-        return spectralClustering(W, k)  
+        runTime = time.time() - startTime
+        return spectralClustering(W, k), runTime
 
 def K_KMeans(adj_matrix, d, k):
     "TO DO"
@@ -179,7 +248,7 @@ def SC_AL(adj_matrix, k):
     -------
     numpy array of shape (n,k) : cluster assignment matrix
     """
-    
+    startTime = time.time()
     n,_,M = adj_matrix.shape # M is the number of clusters, n is the number of nodes
 
     #Computation of the average on the M Laplacian matrices
@@ -198,11 +267,24 @@ def SC_AL(adj_matrix, k):
     U = eigvecs[:,np.argsort(eigvals)[:k]] # eigenvectors corrresponding to the k smallest eigenvalues; shape (n,k)
 
     kmeans = KMeans(n_clusters=k).fit(U)
-
-    return kmeans.labels_
+    runTime = time.time() - startTime
+    return kmeans.labels_, runTime
 
 
 def CoR(adj_matrix,k):
+    """
+    Co-regularized spectral clustering
+    
+    Parameters
+    ----------
+    adj_matrix : numpy array of shape (M,n,n)
+    k (int): number of target clusters
+
+    Returns
+    -------
+    numpy array of shape (n,k) : cluster assignment matrix
+    """
+    startTime = time.time()
 
     data = []
     for i in range(len(adj_matrix)):
@@ -212,5 +294,6 @@ def CoR(adj_matrix,k):
 
     labels = mv_spectral.fit_predict(data)
 
-    return labels
+    runTime = time.time() - startTime
+    return labels, runTime
 
