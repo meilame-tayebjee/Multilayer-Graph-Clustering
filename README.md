@@ -2,16 +2,12 @@
 
 TODO 
 
-- quand on moyenne c'est pas vrai que leur algo est meilleur
 - Expériences avec toutes les mêmes probas
     - Pour chaque expérience : courbe selon M, valeurs probas
 
-- KKmeans TO DO (j'y arrive pas)
-
 - Idées de test : 
-    - check ce qu'il se passe quand on cible le mauvais nombre de clusters (3 au lieu de 5 vrais clusters par exemple)
     - que se passe-t-il quand chaque layer apporte un cluster
-    - comportement asymptotique en fonction de M, n, k, bruit
+    - 2 couches de merde, 1 couche, 3 couches et une seule informative
 
 - LATEX
 - Max: check le "variant SC_GED" dans [A SUPPRIMER]SC_GE.ipynb, je sais pas trop ce que c'est... éventuellement à mettre dans utils/Algorithms et supprimer le notebook
