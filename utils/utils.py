@@ -93,3 +93,15 @@ def rankingInformativeLayers(W, k, true_clusters):
         NMIs[i] = NMI(clustering, true_clusters)
     
     return np.argsort(NMIs)[::-1][:n], NMIs
+
+def searchNextLayer(W, k, current_clustering, indexes):
+
+    n,_,M = W.shape
+    NMIs = np.zeros(M)
+    for i in indexes:
+        W_i = W[:,:,i]
+        clustering = spectralClustering(W_i, k)
+        NMIs[i] = NMI(clustering, current_clustering)
+    
+    NMIs = NMIs[indexes]
+    return indexes[np.argmax(NMIs)]

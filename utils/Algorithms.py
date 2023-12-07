@@ -129,10 +129,13 @@ def twoLayerStepSCSR(f,W, mu):
 
   Parameters
   ----------
-  f : array shape ((n,k))
-      The vectors f
-  W : array shape (n,n)
-      The adjacency matrix of the layer we want to integrate
+    f : array shape ((n,k))
+        The vectors f
+    W : array shape (n,n)
+        The adjacency matrix of the layer we want to integrate
+    mu : float
+        The parameter mu = 1/lambda
+
 
   Returns
   -------
@@ -151,7 +154,7 @@ def twoLayerStepSCSR(f,W, mu):
   return newf
 
 
-def SC_SR(W, k, true_clusters, mu = 1):
+def ourSC_SR(W, k, true_clusters, mu_seq):
     """
     This function performs the multilayer spectral clustering with spectral regularization.
     It generalizes the Algorithm 3 of the paper.
@@ -185,15 +188,66 @@ def SC_SR(W, k, true_clusters, mu = 1):
     #Integration of the other layers by updating the fs
     for i in range(1, M):
         nextLayerMatrix = W[:, :, ranking[i]]
-        f = twoLayerStepSCSR(f,nextLayerMatrix, mu)
+        f = twoLayerStepSCSR(f,nextLayerMatrix, float(mu_seq[0]))
+        mu_seq = mu_seq[1:]
     
     runTime = time.time() - startTime
     return k_means_cluster(f,k), runTime
 
 
+def SC_SR(W, k, true_clusters, mu_seq):
+    """
+    This function performs the multilayer spectral clustering with spectral regularization.
+    It generalizes the Algorithm 3 of the paper.
+
+    Parameters
+    ----------
+    W : numpy array shape (n,n,M)
+        The adjacency mayrix of the multilayer network.
+    k : int
+        The target number of clusters.
+    mu_seq : numpy array shape (M-1,)
+        The sequence of mu = 1/lambda values
+
+    Returns
+    -------
+    numpy array shape (n,)
+        The clustering of the multilayer network.
+    """
+    startTime = time.time()
+    n,_,M = W.shape
+    ranking, _ = rankingInformativeLayers(W, k, true_clusters)
+    non_integrated_layers = list(range(M))
+    #Initialization: we take the best layer and compute the k first eigenvectors of its Laplacian
+    #---------------------#
+    bestLayerMatrix = W[:, :, ranking[0]] #shape (n,n,1) containing the adjacency matrices of the best layer
+    D = computeDegreeMatrix(bestLayerMatrix)
+    L = np.linalg.inv(D)@(D-bestLayerMatrix)
+    eigvals,U = np.linalg.eig(L) #U.shape = (n,n), contains the eigenvectors of the best layer
+    f = U[:,np.argsort(eigvals)[:k]] #f.shape = (n,k), contains the k first eigenvectors of the best layer
+
+    current_clustering = k_means_cluster(f,k)
+    non_integrated_layers.remove(ranking[0])
+    #---------------------#
+
+    #Integration of the other layers by updating the fs
+    while len(non_integrated_layers) > 0:
+        nextLayer = searchNextLayer(W, k, current_clustering, non_integrated_layers)
+        nextLayerMatrix = W[:, :, nextLayer]
+        f = twoLayerStepSCSR(f,nextLayerMatrix, float(mu_seq[0]))
+
+        non_integrated_layers.remove(nextLayer)
+        current_clustering = k_means_cluster(f,k)
+        mu_seq = mu_seq[1:]
+    
+    runTime = time.time() - startTime
+    return k_means_cluster(f,k), runTime
+
+
+
 #-----------------------BASELINE ALGORITHMS----------------------#
-#-----------------See Section VI-B of the paper------------------#
-#--------------Includes SC-SUM, K-KMeans, SC-AL------------------#
+#-------------------See Section VI-B of the paper----------------#
+#-------------------Includes SC-SUM, SC-AL, CoR------------------#
 
 def SC_SUM(adj_matrix, k, normalized = False):
     """
@@ -230,9 +284,6 @@ def SC_SUM(adj_matrix, k, normalized = False):
         runTime = time.time() - startTime
         return spectralClustering(W, k), runTime
 
-def K_KMeans(adj_matrix, d, k):
-    "TO DO"
-    return 0
 
 def SC_AL(adj_matrix, k):
     """
