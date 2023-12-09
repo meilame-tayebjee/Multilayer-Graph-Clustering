@@ -174,7 +174,7 @@ def ourSC_SR(W, k, true_clusters, mu_seq):
     """
     startTime = time.time()
     n,_,M = W.shape
-    ranking, _ = rankingInformativeLayers(W, k, true_clusters)
+    ranking, _, _= rankingInformativeLayers(W, k, true_clusters)
     
     #Initialization: we take the best layer and compute the k first eigenvectors of its Laplacian
     #---------------------#
@@ -216,7 +216,7 @@ def SC_SR(W, k, true_clusters, mu_seq):
     """
     startTime = time.time()
     n,_,M = W.shape
-    ranking, _ = rankingInformativeLayers(W, k, true_clusters)
+    ranking, _, clusterings = rankingInformativeLayers(W, k, true_clusters)
     non_integrated_layers = list(range(M))
     #Initialization: we take the best layer and compute the k first eigenvectors of its Laplacian
     #---------------------#
@@ -232,7 +232,7 @@ def SC_SR(W, k, true_clusters, mu_seq):
 
     #Integration of the other layers by updating the fs
     while len(non_integrated_layers) > 0:
-        nextLayer = searchNextLayer(W, k, current_clustering, non_integrated_layers)
+        nextLayer = searchNextLayer(W, current_clustering, non_integrated_layers, clusterings)
         nextLayerMatrix = W[:, :, nextLayer]
         f = twoLayerStepSCSR(f,nextLayerMatrix, float(mu_seq[0]))
 
