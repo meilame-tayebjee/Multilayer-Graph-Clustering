@@ -1,7 +1,7 @@
 # Multilayer Graph Clustering
 ## Max Kramkimel & Meilame Tayebjee
 
-This project has been realised for the Geometric Data Analysis course of the MVA master. by Prof. Jean Feydy 
+This project has been realised for the Geometric Data Analysis course of the MVA master. by Prof. Jean Feydy.
 
 Its aim is to summarize and discuss the content of the article _Clustering with Multi-Layer Graphs: A Spectral Perspective_ by Xiaowen Dong, Pascal Frossard,
 Pierre Vandergheynst and Nikolai Nefedov (the article is available in the repo).
