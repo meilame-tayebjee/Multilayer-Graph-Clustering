@@ -25,6 +25,6 @@ Additionnaly, the repo also contains supplementary materials:
 - SC-GED-parameters.ipynb contains a cross validation for the hyperparameters $\alpha$ and $\beta$ in a specific case
 - SC-SR-Supplementary-tests.ipynb re-run every experiments of Run.ipynb but comparing SC-SR, ourSC-SR and randomSC-SR
 
-Fell free to reach out to us at meilame.tayebjee@polytechnique.edu / max.kramkimel@gmail.com for any questions or recommendations.
+Feel free to reach out to us at meilame.tayebjee@polytechnique.edu / max.kramkimel@gmail.com for any questions or recommendations.
 
 
