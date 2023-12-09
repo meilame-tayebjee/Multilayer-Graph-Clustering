@@ -11,7 +11,7 @@ More precisely, we :
 - have a discussion on the hyperparameter selections for the SC-GED and SC-SR algorithms, on the choice of the first layer in the SC-SR, and propose several inference for the M-layer version of SC-SR.
 - generate synthetic data and conduct several experiments to assess the benefits and limitations of SC-GED and SC-SR, especially in asymptotic/limit cases.
 
-Everything is detail in the project report also available in the repository. All of the code here is directly runnable and reproduce the results presented.
+Everything is detailed in the project report also available in the repository. All of the code here is directly runnable and reproduce the results presented.
 
 
 - Run.ipynb contains all of our main experiments, organized in sections.
