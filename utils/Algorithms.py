@@ -13,7 +13,7 @@ from mvlearn.cluster import MultiviewCoRegSpectralClustering
 
 
 #Corps de l'algo à commenter
-def SC_GED(W,k, verbose = False):
+def SC_GED(W,k, verbose = False, alpha = 10, beta = 100, iter_max = 20, condition = 0.001):
 
     """
     Implements the SC-GED algorithm.
@@ -33,12 +33,8 @@ def SC_GED(W,k, verbose = False):
     """
     startTime = time.time()
 
-    alpha = 10
-    beta = 100
     iter = 0
-    iter_max = 20
     stopping_condition = False
-    condition = 0.001
 
     n,_,M = W.shape
     L = np.zeros(np.shape(W))
@@ -221,13 +217,63 @@ def SC_SR(W, k, true_clusters, mu_seq):
     #Initialization: we take the best layer and compute the k first eigenvectors of its Laplacian
     #---------------------#
     bestLayerMatrix = W[:, :, ranking[0]] #shape (n,n,1) containing the adjacency matrices of the best layer
-    D = computeDegreeMatrix(bestLayerMatrix)
-    L = np.linalg.inv(D)@(D-bestLayerMatrix)
+    D = computeDegreeMatrix(bestLayerMatrix) #shape (n,n,1) containing the degree matrix of the best layer
+    L = np.linalg.inv(D)@(D-bestLayerMatrix) #shape (n,n,1) containing the Laplacian matrix of the best layer
     eigvals,U = np.linalg.eig(L) #U.shape = (n,n), contains the eigenvectors of the best layer
     f = U[:,np.argsort(eigvals)[:k]] #f.shape = (n,k), contains the k first eigenvectors of the best layer
 
     current_clustering = k_means_cluster(f,k)
     non_integrated_layers.remove(ranking[0])
+    #---------------------#
+
+    #Integration of the other layers by updating the fs
+    while len(non_integrated_layers) > 0:
+        nextLayer = searchNextLayer(W, current_clustering, non_integrated_layers, clusterings)
+        nextLayerMatrix = W[:, :, nextLayer]
+        f = twoLayerStepSCSR(f,nextLayerMatrix, float(mu_seq[0]))
+
+        non_integrated_layers.remove(nextLayer)
+        current_clustering = k_means_cluster(f,k)
+        mu_seq = mu_seq[1:]
+    
+    runTime = time.time() - startTime
+    return k_means_cluster(f,k), runTime
+
+
+def randomSC_SR(W, k, true_clusters, mu_seq):
+    """
+    This function performs the multilayer spectral clustering with spectral regularization.
+    It generalizes the Algorithm 3 of the paper.
+
+    Parameters
+    ----------
+    W : numpy array shape (n,n,M)
+        The adjacency mayrix of the multilayer network.
+    k : int
+        The target number of clusters.
+    mu_seq : numpy array shape (M-1,)
+        The sequence of mu = 1/lambda values
+
+    Returns
+    -------
+    numpy array shape (n,)
+        The clustering of the multilayer network.
+    """
+    startTime = time.time()
+    n,_,M = W.shape
+    _, _, clusterings = rankingInformativeLayers(W, k, true_clusters)
+    non_integrated_layers = list(range(M))
+    #Initialization: we take the best layer and compute the k first eigenvectors of its Laplacian
+    #---------------------#
+    first_index = np.random.randint(M) #randomly choose the first layer !
+    bestLayerMatrix = W[:, :, first_index] #shape (n,n,1) containing the adjacency matrix of the first layer
+    D = computeDegreeMatrix(bestLayerMatrix) #shape (n,n,1) containing the degree matrix of the first layer
+    L = np.linalg.inv(D)@(D-bestLayerMatrix) #shape (n,n,1) containing the Laplacian matrix of the first layer
+    eigvals,U = np.linalg.eig(L) #U.shape = (n,n), contains the eigenvectors of the best layer
+    f = U[:,np.argsort(eigvals)[:k]] #f.shape = (n,k), contains the k first eigenvectors of the best layer
+
+    current_clustering = k_means_cluster(f,k)
+    non_integrated_layers.remove(first_index)
     #---------------------#
 
     #Integration of the other layers by updating the fs
